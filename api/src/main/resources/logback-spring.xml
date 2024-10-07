@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- 60초마다 설정 파일의 변경을 확인하여 변경 시 갱신 -->
+<configuration scan="true" scanPeriod="60 seconds">
+    <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
+    <import class="ch.qos.logback.core.ConsoleAppender"/>
+    <import class="ch.qos.logback.core.rolling.RollingFileAppender"/>
+    <import class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy"/>
+
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n"/>
+    <property name="LOG_PATH" value="api/logs"/>
+    <property name="FILE_NAME" value="all"/>
+    <property name="ERROR_FILE_NAME" value="error"/>
+
+    <!-- Console Appender for all levels -->
+    <appender name="STDOUT" class="ConsoleAppender">
+        <encoder class="PatternLayoutEncoder">
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File Appender for all levels -->
+    <appender name="ALL_LOG" class="RollingFileAppender">
+        <!-- 파일 경로 설정 -->
+        <file>${LOG_PATH}/${FILE_NAME}.log</file>
+        <!-- 출력 패턴 설정 -->
+        <encoder class="PatternLayoutEncoder">
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+        <!-- Rolling 정책 (파일 관리 설정) -->
+        <rollingPolicy class="SizeAndTimeBasedRollingPolicy">
+            <!-- .gz,.zip 등을 넣으면 자동 일자별 로그파일 압축 -->
+            <fileNamePattern>${LOG_PATH}/${FILE_NAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- 파일당 최고 용량 kb, mb, gb -->
+            <maxFileSize>10MB</maxFileSize>
+            <!-- 일자별 로그파일 최대 보관 주기(~일), 해당 설정일 이상 된 파일은 자동으로 제거 -->
+            <maxHistory>365</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <!-- File Appender for ERROR level only -->
+    <appender name="ERROR_LOG" class="RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <!-- 에러 로그를 설정하고 로그의 레벨이 맞으면 onMatch, 아니라면 onMismatch -->
+            <level>error</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <file>${LOG_PATH}/${ERROR_FILE_NAME}.log</file>
+        <encoder class="PatternLayoutEncoder">
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+        <!-- Rolling 정책 -->
+        <rollingPolicy class="SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${ERROR_FILE_NAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>365</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+    <!-- INFO 이상 출력 -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="ALL_LOG"/>
+        <appender-ref ref="ERROR_LOG"/>
+    </root>
+</configuration>

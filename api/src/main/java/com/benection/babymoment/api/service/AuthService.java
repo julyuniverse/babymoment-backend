@@ -74,7 +74,10 @@ public class AuthService {
         UuidLoginResponse uuidLoginResponse = new UuidLoginResponse();
 
         // Check if device exists by uuid and if not create it.
-        Device device = deviceRepository.findByUuid(request.getDeviceUuid()).orElseGet(() -> Device.builder().uuid(request.getDeviceUuid()).build());
+        Device device = deviceRepository.findByUuid(request.getDeviceUuid())
+                .orElseGet(() -> deviceRepository.save(Device.builder()
+                        .uuid(request.getDeviceUuid())
+                        .build()));
         device.updateModel(request.getDeviceModel());
         device.updateSystemName(request.getSystemName());
         device.updateSystemVersion(request.getSystemVersion());

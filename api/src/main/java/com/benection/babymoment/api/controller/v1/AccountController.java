@@ -1,6 +1,5 @@
 package com.benection.babymoment.api.controller.v1;
 
-import com.benection.babymoment.api.dto.account.AccountDto;
 import com.benection.babymoment.api.dto.account.AccountRequest;
 import com.benection.babymoment.api.dto.account.AccountResponse;
 import com.benection.babymoment.api.dto.account.StringResponse;

@@ -1,6 +1,5 @@
 package com.benection.babymoment.api.controller.v1;
 
-import com.benection.babymoment.api.dto.pattern.DailyPatternDto;
 import com.benection.babymoment.api.dto.pattern.DailyPatternListResponse;
 import com.benection.babymoment.api.dto.pattern.DailyPatternResponse;
 import com.benection.babymoment.api.service.PatternService;
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.util.List;
 
 /**
  * @author Lee Taesung

@@ -1,6 +1,5 @@
 package com.benection.babymoment.api.controller.v1;
 
-import com.benection.babymoment.api.dto.inquiry.InquiryDto;
 import com.benection.babymoment.api.dto.inquiry.InquiryListResponse;
 import com.benection.babymoment.api.dto.inquiry.InquiryRequest;
 import com.benection.babymoment.api.service.InquiryService;
@@ -11,8 +10,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * @author Lee Taesung

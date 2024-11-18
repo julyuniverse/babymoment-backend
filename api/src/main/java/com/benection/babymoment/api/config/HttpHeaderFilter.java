@@ -99,29 +99,29 @@ public class HttpHeaderFilter implements Filter {
         }
 
         // Platform 뽑아내기.
-        String platform = httpServletRequest.getHeader(PLATFORM);
-        if (!StringUtils.hasText(platform)) {
-            log.info("[doFilter] Platform 헤더 값이 없어요.");
-            filterErrorResponse.setResponse(httpServletResponse, ErrorCode.MISSING_PLATFORM);
-            return;
-        }
+//        String platform = httpServletRequest.getHeader(PLATFORM);
+//        if (!StringUtils.hasText(platform)) {
+//            log.info("[doFilter] Platform 헤더 값이 없어요.");
+//            filterErrorResponse.setResponse(httpServletResponse, ErrorCode.MISSING_PLATFORM);
+//            return;
+//        }
 
         // Device-Id 뽑아내기.
-        long deviceId = NumberUtils.toLong(httpServletRequest.getHeader(DEVICE_ID), 0L);
-        if (!Pattern.matches("/api/v[0-9]/auth/login/uuid", httpServletRequest.getRequestURI())) { // uuidLogin api는 제외한다.
-            if (deviceId <= 0L) {
-                log.info("[doFilter] Device-Id 헤더 값이 없어요.");
-                filterErrorResponse.setResponse(httpServletResponse, ErrorCode.MISSING_DEVICE_ID);
-                return;
-            }
-        }
+//        long deviceId = NumberUtils.toLong(httpServletRequest.getHeader(DEVICE_ID), 0L);
+//        if (!Pattern.matches("/api/v[0-9]/auth/login/uuid", httpServletRequest.getRequestURI())) { // uuidLogin api는 제외한다.
+//            if (deviceId <= 0L) {
+//                log.info("[doFilter] Device-Id 헤더 값이 없어요.");
+//                filterErrorResponse.setResponse(httpServletResponse, ErrorCode.MISSING_DEVICE_ID);
+//                return;
+//            }
+//        }
 
         // 버전 체크하기.
-        if (appVersionService.isUpdateMandatory(platform, appVersion)) {
-            log.info("[doFilter] 클라이언트 앱 버전이 오래되었어요. 업데이트 필요.");
-            filterErrorResponse.setResponse(httpServletResponse, ErrorCode.UPDATE_REQUIRED_APP_VERSION);
-            return;
-        }
+//        if (appVersionService.isUpdateMandatory(platform, appVersion)) {
+//            log.info("[doFilter] 클라이언트 앱 버전이 오래되었어요. 업데이트 필요.");
+//            filterErrorResponse.setResponse(httpServletResponse, ErrorCode.UPDATE_REQUIRED_APP_VERSION);
+//            return;
+//        }
         chain.doFilter(httpServletRequest, httpServletResponse);
     }
 }

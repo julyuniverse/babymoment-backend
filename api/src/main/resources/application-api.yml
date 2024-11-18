@@ -69,11 +69,14 @@ springdoc:
   default-consumes-media-type: application/json;charset=UTF-8
   default-produces-media-type: application/json;charset=UTF-8
 
+apple:
+  bundle-id: ${APPLE_BUNDLE_ID}
+
 ---
 spring:
   config:
     activate:
-      on-profile: local-profile1
+      on-profile: local-profile
 
 server:
   port: ${SERVER_PORT_1}
@@ -88,16 +91,7 @@ token:
 spring:
   config:
     activate:
-      on-profile: local-profile2
-
-server:
-  port: ${SERVER_PORT_2}
-
----
-spring:
-  config:
-    activate:
-      on-profile: prod-profile1
+      on-profile: prod-profile-1
 
 server:
   port: ${SERVER_PORT_1}
@@ -106,7 +100,7 @@ server:
 spring:
   config:
     activate:
-      on-profile: prod-profile2
+      on-profile: prod-profile-2
 
 server:
   port: ${SERVER_PORT_2}

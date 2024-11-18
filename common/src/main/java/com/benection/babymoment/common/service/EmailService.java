@@ -1,4 +1,4 @@
-package com.aws.ses.service;
+package com.benection.babymoment.common.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,9 +14,9 @@ import software.amazon.awssdk.services.ses.model.*;
 @RequiredArgsConstructor
 public class EmailService {
     private final SesClient sesClient;
-    @Value("${aws.ses.email.sender-name}")
+    @Value("${email.sender-name}")
     private String senderName;
-    @Value("${aws.ses.email.source}")
+    @Value("${email.source}")
     private String emailSource;
 
     /**
@@ -25,7 +25,6 @@ public class EmailService {
      */
     public void sendEmail(String to, String subject, String body) {
         String fromAddress = String.format("%s <%s>", senderName, emailSource);
-        System.out.println(fromAddress);
         SendEmailRequest emailRequest = SendEmailRequest.builder()
                 .destination(Destination.builder().toAddresses(to).build())
                 .message(Message.builder()

@@ -1,4 +1,4 @@
-package com.benection.babymoment.api.dto.account;
+package com.benection.babymoment.api.dto;
 
 import lombok.*;
 

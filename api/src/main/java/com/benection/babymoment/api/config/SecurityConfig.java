@@ -3,6 +3,7 @@ package com.benection.babymoment.api.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -19,11 +20,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity(debug = true)
 @RequiredArgsConstructor
-public class SpringSecurityConfig {
+public class SecurityConfig {
     private final TokenAuthenticationEntryPoint tokenAuthenticationEntryPoint;
     private final TokenAccessDeniedHandler tokenAccessDeniedHandler;
     private final TokenProvider tokenProvider;
     private final RedisService redisService;
+//    private final AuthenticationProvider socialAuthenticationProvider;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -55,6 +57,8 @@ public class SpringSecurityConfig {
                 // TokenFilter 삽입한다.
                 // TokenFilter가 UsernamePasswordAuthenticationFilter보다 먼저 실행되도록 설정한다.
                 .addFilterBefore(new TokenFilter(tokenProvider, redisService), UsernamePasswordAuthenticationFilter.class)
+                // SocialAuthenticationFilter 삽입
+//                .addFilterBefore(new SocialAuthenticationFilter(socialAuthenticationProvider), TokenFilter.class)
 
                 // exception handling 할 때 직접 만든 클래스를 적용한다.
                 .exceptionHandling(exception -> exception

@@ -1,10 +1,10 @@
 plugins {
 	java
-	id("org.springframework.boot") version "3.3.4"
+	id("org.springframework.boot") version "3.3.5"
 	id("io.spring.dependency-management") version "1.1.6"
 }
 
-group = "com.benection"
+group = "com.benection.babymoment"
 version = "1.0.0"
 
 java {
@@ -30,7 +30,7 @@ repositories {
 }
 
 dependencies {
-	implementation(project(":client-aws"))
+	implementation(project(":common"))
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
@@ -52,7 +52,6 @@ dependencies {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
-	enabled = false // 테스트 태스크 비활성화
 }
 
 springBoot {

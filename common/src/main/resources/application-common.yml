@@ -3,6 +3,7 @@ aws:
   secret-access-key: ${AWS_SECRET_ACCESS_KEY}
   ses:
     region: ${AWS_SES_REGION}
-    email:
-      sender-name: ${EMAIL_SENDER_NAME}
-      source: ${EMAIL_SOURCE}
+
+email:
+  sender-name: ${EMAIL_SENDER_NAME}
+  source: ${EMAIL_SOURCE}

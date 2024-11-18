@@ -1,18 +1,24 @@
 package com.benection.babymoment.api.service;
 
+import com.auth0.jwk.Jwk;
+import com.auth0.jwk.JwkException;
+import com.auth0.jwk.JwkProvider;
+import com.auth0.jwk.UrlJwkProvider;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.aws.ses.service.EmailService;
-import com.benection.babymoment.api.config.CustomException;
-import com.benection.babymoment.api.config.ErrorCode;
-import com.benection.babymoment.api.config.RedisService;
-import com.benection.babymoment.api.config.TokenProvider;
+import com.benection.babymoment.api.config.*;
 import com.benection.babymoment.api.dto.ApiResponse;
-import com.benection.babymoment.api.dto.account.PasswordRecoveryRequest;
+import com.benection.babymoment.api.dto.LoginResponse;
+import com.benection.babymoment.api.dto.SocialLoginRequest;
+import com.benection.babymoment.api.dto.PasswordRecoveryRequest;
 import com.benection.babymoment.api.dto.auth.*;
 import com.benection.babymoment.api.dto.Status;
 import com.benection.babymoment.api.dto.auth.TokenReissueRequest;
 import com.benection.babymoment.api.dto.auth.TokenDto;
 import com.benection.babymoment.api.enums.AuthenticationLogType;
+import com.benection.babymoment.api.enums.Authority;
 import com.benection.babymoment.api.enums.StatusCode;
 import com.benection.babymoment.api.enums.TokenType;
 import com.benection.babymoment.api.entity.Account;
@@ -23,20 +29,26 @@ import com.benection.babymoment.api.repository.AccountRepository;
 import com.benection.babymoment.api.repository.BabyRepository;
 import com.benection.babymoment.api.repository.DeviceRepository;
 import com.benection.babymoment.api.repository.RelationshipRepository;
+import com.benection.babymoment.common.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.interfaces.RSAPublicKey;
 import java.time.OffsetDateTime;
-import java.util.Date;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static com.benection.babymoment.api.util.ConvertUtils.convertAccountToAccountDto;
 import static com.benection.babymoment.api.util.ConvertUtils.convertBabyToBabyDto;
@@ -63,6 +75,9 @@ public class AuthService {
     private final EmailService emailService;
     @Value("${token.ttl.refresh-token}")
     private Long refreshTokenTtl;
+    @Value("${apple.bundle-id}")
+    private String appleBundleId;
+
 
     /**
      * @return 요청 결괏값
@@ -127,7 +142,7 @@ public class AuthService {
         uuidLoginResponse.setDeviceId(device.getDeviceId());
 
         // Create authentication log.
-        authenticationLogService.save(AuthenticationLogType.UUID_LOGIN, device.getDeviceId(), device.getAccountId(), device.getBabyId());
+        authenticationLogService.createAuthenticationLog(AuthenticationLogType.UUID_LOGIN, device.getDeviceId(), device.getAccountId(), device.getBabyId());
 
         return new ApiResponse<>(new Status(StatusCode.SUCCESS), uuidLoginResponse);
     }
@@ -154,14 +169,13 @@ public class AuthService {
         Account account = Account.builder()
                 .email(emailSignupRequest.getEmail())
                 .password(passwordEncoder.encode(emailSignupRequest.getPassword()))
-                .username(emailSignupRequest.getUsername())
                 .utcOffset(String.valueOf(datetimeOffset.getOffset()))
                 .tzId(timezoneIdentifier)
                 .build();
         accountRepository.save(account);
 
         // Create authentication log.
-        authenticationLogService.save(AuthenticationLogType.SIGNUP, deviceId, account.getAccountId(), null);
+        authenticationLogService.createAuthenticationLog(AuthenticationLogType.SIGNUP, deviceId, account.getAccountId(), null);
 
         // Set return value.
         apiResponse.setStatus(new Status(StatusCode.SUCCESS));
@@ -248,7 +262,7 @@ public class AuthService {
         }
 
         // Create authentication log.
-        authenticationLogService.save(AuthenticationLogType.EMAIL_LOGIN, device.getDeviceId(), account.getAccountId(), babyId);
+        authenticationLogService.createAuthenticationLog(AuthenticationLogType.EMAIL_LOGIN, device.getDeviceId(), account.getAccountId(), babyId);
 
         // Set return value.
         apiResponse.setStatus(new Status(StatusCode.SUCCESS));
@@ -266,7 +280,7 @@ public class AuthService {
     @Transactional
     public void setNullToDevice(int deviceId) {
         Device device = deviceRepository.findByDeviceId(deviceId);
-        authenticationLogService.save(AuthenticationLogType.FORCE_LOGOUT, deviceId, device.getAccountId(), device.getBabyId());
+        authenticationLogService.createAuthenticationLog(AuthenticationLogType.FORCE_LOGOUT, deviceId, device.getAccountId(), device.getBabyId());
         device.updateAccountId(null);
         device.updateBabyId(null);
     }
@@ -376,14 +390,14 @@ public class AuthService {
             device.updateBabyId(null);
 
             // 6. Create authentication log.
-            authenticationLogService.save(AuthenticationLogType.LOGOUT, deviceId, accountId, babyId);
+            authenticationLogService.createAuthenticationLog(AuthenticationLogType.LOGOUT, deviceId, accountId, babyId);
 
             // 7. Set return value.
             apiResponse.setStatus(new Status(StatusCode.SUCCESS));
 
             return apiResponse;
         } catch (CustomException e) {
-            authenticationLogService.save(AuthenticationLogType.LOGOUT, deviceId, accountId, babyId);
+            authenticationLogService.createAuthenticationLog(AuthenticationLogType.LOGOUT, deviceId, accountId, babyId);
             setNullToDevice(deviceId);
             log.info("[logout] ErrorCode: " + e.getErrorCode().name());
 
@@ -419,5 +433,116 @@ public class AuthService {
 
             return apiResponse;
         }
+    }
+
+    /**
+     * 소셜 제공자를 통해 로그인한다.
+     *
+     * @author Lee Taesung
+     * @since 1.0
+     */
+    @Transactional
+    public ApiResponse<LoginResponse> loginWithSocialProvider(SocialLoginRequest request) throws JwkException, MalformedURLException {
+        // Get Device-Id header value, Datetime-Offset header value, Timezone-Identifier header value.
+        Integer deviceId = Integer.valueOf(getDeviceId());
+        OffsetDateTime datetimeOffset = getDatetimeOffset();
+        String timezoneIdentifier = getTimezoneIdentifier();
+        Account account = null;
+        if (Objects.equals(request.getProvider(), "apple")) { // apple
+            // idToken 검증 5가지
+            // apple 개발자 문서: https://developer.apple.com/documentation/sign_in_with_apple/sign_in_with_apple_rest_api/verifying_a_user#3383769
+            // Verify the identity token ↓
+            // 1. Verify the JWS E256 signature using the server’s public key
+            // 2. Verify the nonce for the authentication ↓
+            // nonce는 클라이언트에서 생성한 값으로, 보안 상의 이유로 재전송 공격을 방지한다.
+            // 클라이언트에서 생성한 nonce를 identityToken을 검증할 때 포함시켜야 하지만, 클라이언트에서 identityToken을 얻기 때문에 서버에서는 이 값을 검증할 수 없다.
+            // 보통 이 검증은 클라이언트에서 이루어진다.
+            // 3. Verify that the iss field contains https://appleid.apple.com
+            // 4. Verify that the aud field is the developer’s client_id
+            // 5. Verify that the time is earlier than the exp value of the token
+
+            // 1. server’s public key를 사용한 검증(1번 검증)
+            // apple 서버로부터 공개키 3개 가져오기.
+            JwkProvider provider = new UrlJwkProvider(new URL("https://appleid.apple.com/auth/keys"));
+            DecodedJWT jwt = JWT.decode(request.getIdToken());
+            Jwk jwk = provider.get(jwt.getKeyId());
+
+            // 2. Validate token.
+            Algorithm algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey(), null);
+            JWTVerifier verifier = JWT.require(algorithm)
+                    .withIssuer("https://appleid.apple.com")
+                    .build();
+            DecodedJWT decodedJWT = verifier.verify(request.getIdToken());
+
+            // 3. Validate audience.
+            if (!decodedJWT.getAudience().contains(appleBundleId)) {
+                throw new RuntimeException("Invalid audience.");
+            }
+
+            // 4. Validate expiration.
+            if (decodedJWT.getExpiresAt().before(new Date())) {
+                throw new RuntimeException("Token has expired.");
+            }
+
+            // Extract user info.
+            String userIdentifier = decodedJWT.getSubject();
+            log.info("userIdentifier: {}", userIdentifier);
+            String email = decodedJWT.getClaim("email").asString();
+            log.info("email: {}", decodedJWT.getClaim("email").asString());
+            String firstName = request.getFirstName();
+            log.info("firstName: {}", firstName);
+            String lastName = request.getLastName();
+            log.info("lastName: {}", lastName);
+
+            // Insert db data.
+            Optional<Account> optionalAccount = accountRepository.findByUserIdentifier(userIdentifier);
+            if (optionalAccount.isPresent()) {
+                account = optionalAccount.get();
+                account.updateEmail(email);
+                if (StringUtils.hasText(firstName)) {
+                    account.updateFirstName(firstName);
+                }
+                if (StringUtils.hasText(lastName)) {
+                    account.updateLastName(lastName);
+                }
+            } else {
+                account = accountRepository.save(Account.builder()
+                        .userIdentifier(userIdentifier)
+                        .email(email)
+                        .firstName(firstName)
+                        .lastName(lastName)
+                        .authority(Authority.ROLE_USER.name())
+                        .utcOffset(String.valueOf(datetimeOffset.getOffset()))
+                        .tzId(timezoneIdentifier)
+                        .build());
+            }
+        }
+
+        // Update device.
+        Device device = deviceRepository.findByDeviceId(deviceId);
+        device.updateAccountId(account.getAccountId());
+
+        // Issue tokens.
+        // Create access token, refresh token.
+        // 1. 소셜 인증 토큰 생성
+        List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(account.getAuthority()));
+        SocialAuthenticationToken authenticationToken = new SocialAuthenticationToken(account.getAccountId(), authorities);
+
+        // 2. SecurityContext에 인증 정보 설정
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+        // 3. JWT 토큰 발급
+        TokenDto tokenDto = new TokenDto(tokenProvider.createAccessToken(authenticationToken, String.valueOf(deviceId)), tokenProvider.createRefreshToken(authenticationToken, String.valueOf(deviceId)));
+
+        // 4. redis에 refresh token 생성한다. (생성 시 키 이름은 accountId:deviceId로 설정한다.)
+        redisService.setData(account.getAccountId() + ":" + device.getDeviceId(), tokenDto.getRefreshToken(), refreshTokenTtl);
+
+        // 5. Set return value.
+        LoginResponse loginResponse = new LoginResponse(convertAccountToAccountDto(account), tokenDto);
+
+        // 6. Create authentication log.
+        authenticationLogService.createAuthenticationLog(AuthenticationLogType.SOCIAL_LOGIN, deviceId, account.getAccountId(), null);
+
+        return new ApiResponse<>(new Status(StatusCode.SUCCESS), loginResponse);
     }
 }

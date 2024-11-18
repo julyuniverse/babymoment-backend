@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-    id("org.springframework.boot") version "3.3.2"
+    id("org.springframework.boot") version "3.3.5"
     id("io.spring.dependency-management") version "1.1.6"
 }
 
@@ -35,7 +35,6 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-    enabled = false // 테스트 태스크 비활성화
 }
 
 tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {

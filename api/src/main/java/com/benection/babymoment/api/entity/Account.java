@@ -26,25 +26,29 @@ public class Account extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer accountId;
+    private String userIdentifier;
     private String email;
     private String password;
-    private String username;
+    private String firstName;
+    private String lastName;
     private String authority;
-    private Boolean isDeleted;
     private String utcOffset;
     private String tzId;
     private LocalDateTime deletedAt;
+    private Boolean isDeleted;
 
     @Builder
-    public Account(String email, String password, String username, String authority, Boolean isDeleted, String utcOffset, String tzId, LocalDateTime deletedAt) {
+    public Account(String userIdentifier, String email, String password, String firstName, String lastName, String authority, String utcOffset, String tzId, LocalDateTime deletedAt, Boolean isDeleted) {
+        this.userIdentifier = userIdentifier;
         this.email = email;
         this.password = password;
-        this.username = username;
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.authority = authority;
-        this.isDeleted = isDeleted;
         this.utcOffset = utcOffset;
         this.tzId = tzId;
         this.deletedAt = deletedAt;
+        this.isDeleted = isDeleted;
     }
 
     public void updateEmail(String email) {
@@ -55,15 +59,19 @@ public class Account extends BaseEntity {
         this.password = password;
     }
 
-    public void updateUsername(String username) {
-        this.username = username;
+    public void updateFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public void updateIsDeleted(Boolean isDeleted) {
-        this.isDeleted = isDeleted;
+    public void updateLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public void updateDeletedAt(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
+    }
+
+    public void updateIsDeleted(Boolean isDeleted) {
+        this.isDeleted = isDeleted;
     }
 }

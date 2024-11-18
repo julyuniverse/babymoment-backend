@@ -1,5 +1,6 @@
-package com.benection.babymoment.api.dto.account;
+package com.benection.babymoment.api.dto;
 
+import com.benection.babymoment.api.dto.auth.TokenDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PasswordRecoveryRequest {
-    private String email;
+public class LoginResponse {
+    private AccountDTO account;
+    private TokenDto token;
 }

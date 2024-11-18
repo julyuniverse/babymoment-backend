@@ -34,4 +34,10 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
      * @since 1.0
      */
     Optional<Account> findByAccountIdAndIsDeletedFalse(long accountId);
+
+    /**
+     * @author Lee Taesung
+     * @since 1.0
+     */
+    Optional<Account> findByUserIdentifier(String userIdentifier);
 }

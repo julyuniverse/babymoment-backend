@@ -21,7 +21,7 @@ public class AuthenticationLogService {
     private final AuthenticationLogRepository authenticationLogRepository;
 
     @Transactional
-    public void save(AuthenticationLogType authenticationLogType, Integer deviceId, Integer accountId, Integer babyId) {
+    public void createAuthenticationLog(AuthenticationLogType authenticationLogType, Integer deviceId, Integer accountId, Integer babyId) {
         String ipAddress = getIpAddress();
         String userAgent = getUserAgent();
         String appVersion = getAppVersion();

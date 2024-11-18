@@ -1,4 +1,4 @@
-package com.benection.babymoment.api.dto.account;
+package com.benection.babymoment.api.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,5 +14,5 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AccountResponse {
-    private AccountDto account;
+    private AccountDTO account;
 }

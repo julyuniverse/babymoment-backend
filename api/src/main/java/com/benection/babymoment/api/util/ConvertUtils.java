@@ -1,6 +1,6 @@
 package com.benection.babymoment.api.util;
 
-import com.benection.babymoment.api.dto.account.AccountDto;
+import com.benection.babymoment.api.dto.AccountDTO;
 import com.benection.babymoment.api.dto.activity.ActivityDto;
 import com.benection.babymoment.api.dto.baby.BabyDto;
 import com.benection.babymoment.api.dto.inquiry.InquiryDto;
@@ -26,10 +26,13 @@ public class ConvertUtils {
      * @author Lee Taesung
      * @since 1.0
      */
-    public static AccountDto convertAccountToAccountDto(Account account) {
-        return new AccountDto(account.getAccountId(),
-                account.getEmail(),
-                account.getUsername());
+    public static AccountDTO convertAccountToAccountDto(Account account) {
+        return AccountDTO.builder()
+                .accountId(account.getAccountId())
+                .email(account.getEmail())
+                .firstName(account.getFirstName())
+                .lastName(account.getLastName())
+                .build();
     }
 
     /**

@@ -1,8 +1,8 @@
 package com.benection.babymoment.api.controller.v1;
 
-import com.benection.babymoment.api.dto.account.AccountRequest;
-import com.benection.babymoment.api.dto.account.AccountResponse;
-import com.benection.babymoment.api.dto.account.StringResponse;
+import com.benection.babymoment.api.dto.AccountRequest;
+import com.benection.babymoment.api.dto.AccountResponse;
+import com.benection.babymoment.api.dto.StringResponse;
 import com.benection.babymoment.api.service.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

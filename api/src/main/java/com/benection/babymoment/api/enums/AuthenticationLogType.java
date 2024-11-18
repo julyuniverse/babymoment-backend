@@ -6,6 +6,7 @@ package com.benection.babymoment.api.enums;
  */
 public enum AuthenticationLogType {
     SIGNUP,
+    SOCIAL_LOGIN,
     EMAIL_LOGIN,
     UUID_LOGIN,
     LOGOUT,

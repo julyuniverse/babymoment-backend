@@ -4,9 +4,9 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.benection.babymoment.api.config.RedisService;
 import com.benection.babymoment.api.config.TokenProvider;
 import com.benection.babymoment.api.dto.ApiResponse;
-import com.benection.babymoment.api.dto.account.AccountRequest;
-import com.benection.babymoment.api.dto.account.AccountResponse;
-import com.benection.babymoment.api.dto.account.StringResponse;
+import com.benection.babymoment.api.dto.AccountRequest;
+import com.benection.babymoment.api.dto.AccountResponse;
+import com.benection.babymoment.api.dto.StringResponse;
 import com.benection.babymoment.api.dto.Status;
 import com.benection.babymoment.api.enums.*;
 import com.benection.babymoment.api.entity.*;
@@ -83,9 +83,6 @@ public class AccountService {
             } else {
                 return new ApiResponse<>(new Status(StatusCode.INVALID_PASSWORD), null);
             }
-        }
-        if (StringUtils.hasText(request.getUsername()) && !Objects.equals(request.getUsername(), account.getUsername())) {
-            account.updateUsername(request.getUsername());
         }
 
         return new ApiResponse<>(new Status(StatusCode.SUCCESS), new AccountResponse(convertAccountToAccountDto(account)));
@@ -192,7 +189,7 @@ public class AccountService {
         }
 
         // Create authentication log.
-        authenticationLogService.save(AuthenticationLogType.DELETE, deviceId, accountId, babyId);
+        authenticationLogService.createAuthenticationLog(AuthenticationLogType.DELETE, deviceId, accountId, babyId);
 
         return new ApiResponse<>(new Status(StatusCode.SUCCESS), null);
     }

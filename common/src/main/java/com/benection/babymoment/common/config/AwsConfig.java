@@ -1,4 +1,4 @@
-package com.aws;
+package com.benection.babymoment.common.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

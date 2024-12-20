@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-    id("org.springframework.boot") version "3.3.5"
+    id("org.springframework.boot") version "3.4.0"
     id("io.spring.dependency-management") version "1.1.6"
 }
 
@@ -15,11 +15,11 @@ configurations {
         extendsFrom(configurations.annotationProcessor.get())
     }
 
-    all {
-        // console msg: Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
-        // 잠재적인 충돌을 피하기 위해서 commons-logging.jar 제거하기.
-        exclude("commons-logging", "commons-logging")
-    }
+//    all {
+//        // console msg: Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+//        // 잠재적인 충돌을 피하기 위해서 commons-logging.jar 제거하기.
+//        exclude("commons-logging", "commons-logging")
+//    }
 }
 
 repositories {

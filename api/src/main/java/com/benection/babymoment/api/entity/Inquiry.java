@@ -1,9 +1,6 @@
 package com.benection.babymoment.api.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,8 +17,9 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@DynamicInsert // insert 시 null인 필드 제외
-@DynamicUpdate // update 시 null인 필드 제외
+@DynamicInsert
+@DynamicUpdate
+@Table(name = "inquiries")
 public class Inquiry extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,18 +28,18 @@ public class Inquiry extends BaseEntity {
     private Integer babyId;
     private String title;
     private String content;
-    private LocalDateTime inquiryDate;
+    private LocalDateTime inquiredAt;
     private String answer;
-    private LocalDateTime answerDate;
+    private LocalDateTime answeredAt;
 
     @Builder
-    public Inquiry(Integer accountId, Integer babyId, String title, String content, LocalDateTime inquiryDate, String answer, LocalDateTime answerDate) {
+    public Inquiry(Integer accountId, Integer babyId, String title, String content, LocalDateTime inquiredAt, String answer, LocalDateTime answeredAt) {
         this.accountId = accountId;
         this.babyId = babyId;
         this.title = title;
         this.content = content;
-        this.inquiryDate = inquiryDate;
+        this.inquiredAt = inquiredAt;
         this.answer = answer;
-        this.answerDate = answerDate;
+        this.answeredAt = answeredAt;
     }
 }

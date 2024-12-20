@@ -34,7 +34,7 @@ public class AuthenticationLogService {
                 .babyId(babyId)
                 .ip(ipAddress)
                 .userAgent(userAgent)
-                .appVersion(appVersion)
+                .version(appVersion)
                 .utcOffset(String.valueOf(datetimeOffset.getOffset()))
                 .tzId(timezoneIdentifier)
                 .build());

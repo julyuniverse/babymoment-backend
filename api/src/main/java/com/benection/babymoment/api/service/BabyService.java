@@ -2,7 +2,7 @@ package com.benection.babymoment.api.service;
 
 import com.benection.babymoment.api.dto.ApiResponse;
 import com.benection.babymoment.api.dto.baby.*;
-import com.benection.babymoment.api.dto.Status;
+import com.benection.babymoment.api.dto.StatusDto;
 import com.benection.babymoment.api.enums.*;
 import com.benection.babymoment.api.entity.*;
 import com.benection.babymoment.api.repository.*;
@@ -60,7 +60,7 @@ public class BabyService {
         String imageFileName = "default.png";
         int babyCount = relationshipRepository.countByAccountId(request.getAccountId());
         if (babyCount >= 2) { // Baby creation is full.
-            apiResponse.setStatus(new Status(StatusCode.EXCEEDED_LIMIT_CREATION));
+            apiResponse.setStatus(new StatusDto(StatusCode.EXCEEDED_LIMIT_CREATION));
 
             return apiResponse;
         }
@@ -73,7 +73,7 @@ public class BabyService {
                 extension = FilenameUtils.getExtension(request.getImage().getOriginalFilename());
                 if (!(Objects.equals(extension, "png") || Objects.equals(extension, "jpg") || Objects.equals(extension, "jpeg") || Objects.equals(extension, "PNG") || Objects.equals(extension, "JPG") || Objects.equals(extension, "JPEG"))) {
                     log.info("[createBaby] 유효하지 않은 확장자에요.");
-                    apiResponse.setStatus(new Status(StatusCode.UNSUPPORTED_EXTENSION));
+                    apiResponse.setStatus(new StatusDto(StatusCode.UNSUPPORTED_EXTENSION));
 
                     return apiResponse;
                 }
@@ -86,7 +86,6 @@ public class BabyService {
                 .birthday(applyUtcOffsetToKoreanTime(datetimeOffset, request.getBirthday()))
                 .gender(Gender.valueOf(request.getGender()).name())
                 .bloodType(BloodType.valueOf(request.getBloodType()).name())
-                .imageFileName(imageFileName)
                 .utcOffset(String.valueOf(datetimeOffset.getOffset()))
                 .tzId(timezoneIdentifier)
                 .build();
@@ -103,7 +102,6 @@ public class BabyService {
                 // Create file and update data.
                 imageFileName = baby.getBabyId() + "_" + UUID.randomUUID();
                 request.getImage().transferTo(new File(dir + imageFileName + "." + extension));
-                baby.updateImageFileName(imageFileName + "." + extension);
             }
         }
 
@@ -128,7 +126,7 @@ public class BabyService {
                 .build());
 
         // Set return value.
-        apiResponse.setStatus(new Status(StatusCode.SUCCESS));
+        apiResponse.setStatus(new StatusDto(StatusCode.SUCCESS));
         apiResponse.setData(new BabyResponse(convertBabyToBabyDto(baby, relationship)));
 
         return apiResponse;
@@ -196,7 +194,7 @@ public class BabyService {
             }
         }
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), null);
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), null);
     }
 
 
@@ -211,7 +209,7 @@ public class BabyService {
         Optional<BabyCode> optionalBabyCode = babyCodeRepository.findByAccountIdAndBabyId(request.getAccountId(), request.getBabyId());
         if (optionalBabyCode.isPresent()) {
             // 1-2. If there is data, return data information.
-            return new ApiResponse<>(new Status(StatusCode.SUCCESS), new CodeGenerationResponse(optionalBabyCode.get().getCode(), redisTemplate.getExpire("babycode:" + optionalBabyCode.get().getCode(), TimeUnit.SECONDS)));
+            return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), new CodeGenerationResponse(optionalBabyCode.get().getCode(), redisTemplate.getExpire("babycode:" + optionalBabyCode.get().getCode(), TimeUnit.SECONDS)));
         } else {
             // 1-2. 데이터가 없다면 생성한다.
             String code;
@@ -229,7 +227,7 @@ public class BabyService {
                     .build();
             babyCodeRepository.save(babyCode);
 
-            return new ApiResponse<>(new Status(StatusCode.SUCCESS), new CodeGenerationResponse(babyCode.getCode(), redisTemplate.getExpire("babycode:" + babyCode.getCode(), TimeUnit.SECONDS)));
+            return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), new CodeGenerationResponse(babyCode.getCode(), redisTemplate.getExpire("babycode:" + babyCode.getCode(), TimeUnit.SECONDS)));
         }
     }
 
@@ -248,7 +246,7 @@ public class BabyService {
         Integer babyId;
         int babyCount = relationshipRepository.countByAccountId(codeSharingRequest.getAccountId());
         if (babyCount >= 2) { // 아기 생성 한도 초과
-            apiResponse.setStatus(new Status(StatusCode.EXCEEDED_LIMIT_CREATION));
+            apiResponse.setStatus(new StatusDto(StatusCode.EXCEEDED_LIMIT_CREATION));
 
             return apiResponse;
         }
@@ -258,7 +256,7 @@ public class BabyService {
         if (babyCodeOptional.isPresent()) {
             babyId = babyCodeOptional.get().getBabyId();
         } else {
-            apiResponse.setStatus(new Status(StatusCode.NOT_FOUND_CODE));
+            apiResponse.setStatus(new StatusDto(StatusCode.NOT_FOUND_CODE));
 
             return apiResponse;
         }
@@ -266,14 +264,14 @@ public class BabyService {
         // Check baby.
         Baby baby = babyRepository.findByBabyId(babyId);
         if (baby.getIsDeleted()) {
-            apiResponse.setStatus(new Status(StatusCode.ALREADY_DELETED_BABY));
+            apiResponse.setStatus(new StatusDto(StatusCode.ALREADY_DELETED_BABY));
 
             return apiResponse;
         }
 
         // 이미 관계가 있는지 검사한다.
         if (relationshipRepository.existsByAccountIdAndBabyId(codeSharingRequest.getAccountId(), baby.getBabyId())) {
-            apiResponse.setStatus(new Status(StatusCode.ALREADY_REGISTERED_BABY));
+            apiResponse.setStatus(new StatusDto(StatusCode.ALREADY_REGISTERED_BABY));
 
             return apiResponse;
         }
@@ -299,7 +297,7 @@ public class BabyService {
                 .build());
 
         // Set return value.
-        apiResponse.setStatus(new Status(StatusCode.SUCCESS));
+        apiResponse.setStatus(new StatusDto(StatusCode.SUCCESS));
         apiResponse.setData(new BabyResponse(convertBabyToBabyDto(baby, relationship)));
 
         return apiResponse;
@@ -328,7 +326,7 @@ public class BabyService {
             babyDtos.add(babyResponse);
         }
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), new BabyListResponse(babyDtos));
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), new BabyListResponse(babyDtos));
     }
 
     /**
@@ -343,7 +341,7 @@ public class BabyService {
         // Check baby.
         Baby baby = babyRepository.findByBabyId(babyId);
         if (baby.getIsDeleted()) {
-            apiResponse.setStatus(new Status(StatusCode.ALREADY_DELETED_BABY));
+            apiResponse.setStatus(new StatusDto(StatusCode.ALREADY_DELETED_BABY));
 
             return apiResponse;
         }
@@ -354,7 +352,7 @@ public class BabyService {
         if (optionalRelationship.isPresent()) {
             relationship = optionalRelationship.get();
         } else {
-            apiResponse.setStatus(new Status(StatusCode.NOT_FOUND_BABY));
+            apiResponse.setStatus(new StatusDto(StatusCode.NOT_FOUND_BABY));
 
             return apiResponse;
         }
@@ -368,7 +366,7 @@ public class BabyService {
         device.updateBabyId(babyId);
 
         // Set return value.
-        apiResponse.setStatus(new Status(StatusCode.SUCCESS));
+        apiResponse.setStatus(new StatusDto(StatusCode.SUCCESS));
         apiResponse.setData(new BabyResponse(convertBabyToBabyDto(baby, relationship)));
 
         return apiResponse;
@@ -395,7 +393,7 @@ public class BabyService {
             relationship = optionalRelationship.get();
         } else {
             log.info("[updateBaby] 이미 삭제된 아기에요.");
-            apiResponse.setStatus(new Status(StatusCode.ALREADY_DELETED_BABY));
+            apiResponse.setStatus(new StatusDto(StatusCode.ALREADY_DELETED_BABY));
 
             return apiResponse;
         }
@@ -407,7 +405,7 @@ public class BabyService {
                 String extension = FilenameUtils.getExtension(request.getImage().getOriginalFilename());
                 if (!(Objects.equals(extension, "png") || Objects.equals(extension, "jpg") || Objects.equals(extension, "jpeg") || Objects.equals(extension, "PNG") || Objects.equals(extension, "JPG") || Objects.equals(extension, "JPEG"))) {
                     log.info("[updateBaby] 유효하지 않은 확장자에요.");
-                    apiResponse.setStatus(new Status(StatusCode.UNSUPPORTED_EXTENSION));
+                    apiResponse.setStatus(new StatusDto(StatusCode.UNSUPPORTED_EXTENSION));
 
                     return apiResponse;
                 }
@@ -419,12 +417,9 @@ public class BabyService {
                 // 파일 생성 및 데이터를 업데이트한다.
                 imageFileName = baby.getBabyId() + "_" + UUID.randomUUID();
                 request.getImage().transferTo(new File(dir + imageFileName + "." + extension));
-                baby.updateImageFileName(imageFileName + "." + extension);
             } else {
-                baby.updateImageFileName(imageFileName);
             }
         } else {
-            baby.updateImageFileName(imageFileName);
         }
 
         // 정보를 업데이트한다.
@@ -445,7 +440,7 @@ public class BabyService {
         }
 
         // Set return value.
-        apiResponse.setStatus(new Status(StatusCode.SUCCESS));
+        apiResponse.setStatus(new StatusDto(StatusCode.SUCCESS));
         apiResponse.setData(new BabyResponse(convertBabyToBabyDto(baby, relationship)));
 
         return apiResponse;

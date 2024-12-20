@@ -2,7 +2,7 @@ package com.benection.babymoment.api.service;
 
 import com.benection.babymoment.api.dto.ApiResponse;
 import com.benection.babymoment.api.dto.activity.*;
-import com.benection.babymoment.api.dto.Status;
+import com.benection.babymoment.api.dto.StatusDto;
 import com.benection.babymoment.api.enums.StatusCode;
 import com.benection.babymoment.api.entity.Activity;
 import com.benection.babymoment.api.entity.Baby;
@@ -66,7 +66,7 @@ public class ActivityService {
         // Create activity.
         Activity activity = Activity.builder()
                 .babyId(request.getBabyId())
-                .type(request.getType())
+                .type1(request.getType1())
                 .type2(request.getType2())
                 .memo(request.getMemo())
                 .startTime(startTime)
@@ -84,7 +84,7 @@ public class ActivityService {
                 .build();
         activityRepository.save(activity);
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), new ActivityResponse(convertActivityToActivityDto(activity)));
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), new ActivityResponse(convertActivityToActivityDto(activity)));
     }
 
     /**
@@ -98,8 +98,8 @@ public class ActivityService {
         OffsetDateTime datetimeOffset = getDatetimeOffset();
         String timezoneIdentifier = getTimezoneIdentifier();
         Activity activity = activityRepository.findByActivityId(activityId);
-        if (activityRequest.getType() != null && !Objects.equals(activityRequest.getType(), activity.getType())) {
-            activity.updateType(activityRequest.getType());
+        if (activityRequest.getType1() != null && !Objects.equals(activityRequest.getType1(), activity.getType1())) {
+            activity.updateType1(activityRequest.getType1());
         }
         if (activityRequest.getType2() != null && !Objects.equals(activityRequest.getType2(), activity.getType2())) {
             activity.updateType2(activityRequest.getType2());
@@ -169,7 +169,7 @@ public class ActivityService {
         activity.updateUtcOffset(String.valueOf(datetimeOffset.getOffset()));
         activity.updateTzId(timezoneIdentifier);
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), new ActivityResponse(convertActivityToActivityDto(activity)));
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), new ActivityResponse(convertActivityToActivityDto(activity)));
     }
 
     /**
@@ -179,10 +179,14 @@ public class ActivityService {
      */
     @Transactional
     public ApiResponse<Void> deleteActivity(int activityId) {
+        LocalDateTime now = LocalDateTime.now().withNano(0);
         Optional<Activity> optionalActivity = activityRepository.findById(activityId);
-        optionalActivity.ifPresent(activity -> activity.updateIsActive(false));
+        optionalActivity.ifPresent(activity -> {
+            activity.updateIsDeleted(true);
+            activity.updateDeletedAt(now);
+        });
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), null);
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), null);
     }
 
     /**
@@ -203,7 +207,7 @@ public class ActivityService {
         LocalDateTime startKoreanDatetime = applyUtcOffsetToKoreanTime(datetimeOffset, LocalDateTime.of(lastDate, LocalTime.of(0, 0, 0)));
 
         // 2. 위에서 구한 startKoreanDatetime 미만으로 100개의 값을 가져온다.
-        List<Activity> activities = activityRepository.findTop100ByBabyIdAndStartTimeLessThanAndIsActiveOrderByStartTimeDesc(babyId, startKoreanDatetime, true);
+        List<Activity> activities = activityRepository.findTop100ByBabyIdAndStartTimeLessThanAndIsDeletedFalseOrderByStartTimeDesc(babyId, startKoreanDatetime);
 
         // 3. 순서가 보장되는 LinkedHashSet에 값을 담는다.
         Set<Activity> activitySet = new LinkedHashSet<>(activities);
@@ -221,7 +225,7 @@ public class ActivityService {
             LocalDateTime localDatetime = applyUtcOffsetToLocalTime(datetimeOffset, lastActivity.getStartTime());
             LocalDateTime startKoreanDatetime2 = applyUtcOffsetToKoreanTime(datetimeOffset, LocalDateTime.of(localDatetime.toLocalDate(), LocalTime.of(0, 0, 0)));
             LocalDateTime endLocalDatetime2 = applyUtcOffsetToKoreanTime(datetimeOffset, LocalDateTime.of(localDatetime.toLocalDate(), LocalTime.of(23, 59, 59)));
-            List<Activity> dailyRecords2 = activityRepository.findByBabyIdAndStartTimeBetweenAndIsActiveOrderByStartTimeDesc(babyId, startKoreanDatetime2, endLocalDatetime2, true);
+            List<Activity> dailyRecords2 = activityRepository.findByBabyIdAndStartTimeBetweenAndIsDeletedFalseOrderByStartTimeDesc(babyId, startKoreanDatetime2, endLocalDatetime2);
             activitySet.addAll(dailyRecords2);
         }
 
@@ -248,10 +252,10 @@ public class ActivityService {
             }
 
             // amount of things
-            long powderedMilkAmount = (long) collect.get(localDateKey).stream().filter(v -> Objects.equals(v.getType(), "POWDERED_MILK")).mapToDouble(Activity::getAmount).sum();
-            long babyFoodAmount = (long) collect.get(localDateKey).stream().filter(v -> Objects.equals(v.getType(), "BABY_FOOD")).mapToDouble(Activity::getAmount).sum();
-            long milkAmount = (long) collect.get(localDateKey).stream().filter(v -> Objects.equals(v.getType(), "MILK")).mapToDouble(Activity::getAmount).sum();
-            long snackAmount = (long) collect.get(localDateKey).stream().filter(v -> Objects.equals(v.getType(), "SNACK")).mapToDouble(Activity::getAmount).sum();
+            long powderedMilkAmount = (long) collect.get(localDateKey).stream().filter(v -> Objects.equals(v.getType1(), "POWDERED_MILK")).mapToDouble(Activity::getAmount).sum();
+            long babyFoodAmount = (long) collect.get(localDateKey).stream().filter(v -> Objects.equals(v.getType1(), "BABY_FOOD")).mapToDouble(Activity::getAmount).sum();
+            long milkAmount = (long) collect.get(localDateKey).stream().filter(v -> Objects.equals(v.getType1(), "MILK")).mapToDouble(Activity::getAmount).sum();
+            long snackAmount = (long) collect.get(localDateKey).stream().filter(v -> Objects.equals(v.getType1(), "SNACK")).mapToDouble(Activity::getAmount).sum();
 
             // list
             for (Activity activity : collect.get(localDateKey)) {
@@ -269,6 +273,6 @@ public class ActivityService {
             activityWrappersResponse.add(activityWrapper);
         }
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), new ActivityListResponse(activityWrappersResponse, lastDateForReturn));
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), new ActivityListResponse(activityWrappersResponse, lastDateForReturn));
     }
 }

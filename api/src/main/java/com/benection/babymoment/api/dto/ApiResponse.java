@@ -14,6 +14,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApiResponse<T> {
-    private Status status;
+    private StatusDto status;
     private T data;
 }

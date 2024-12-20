@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Inquiry", description = "inquiry 관련 api")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/inquiries")
+@RequestMapping("/v1/inquiries")
 public class InquiryController {
     private final InquiryService inquiryService;
 

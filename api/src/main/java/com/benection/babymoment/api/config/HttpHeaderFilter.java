@@ -1,6 +1,6 @@
 package com.benection.babymoment.api.config;
 
-import com.benection.babymoment.api.service.AppVersionService;
+import com.benection.babymoment.api.service.VersionService;
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,12 +25,12 @@ import static com.benection.babymoment.api.util.DateUtils.convertLocalTimeToKore
  * @author Lee Taesung
  * @since 1.0
  */
-@WebFilter(urlPatterns = "/api/*")
+@WebFilter(urlPatterns = "/*")
 @RequiredArgsConstructor
 @Slf4j
 public class HttpHeaderFilter implements Filter {
     private final FilterErrorResponse filterErrorResponse;
-    private final AppVersionService appVersionService;
+    private final VersionService versionService;
     public static final String ACCEPT_LANGUAGE = "Accept-Language";
     public static final String DATETIME_OFFSET = "Datetime-Offset";
     public static final String TIMEZONE_IDENTIFIER = "Timezone-Identifier";
@@ -99,22 +99,22 @@ public class HttpHeaderFilter implements Filter {
         }
 
         // Platform 뽑아내기.
-//        String platform = httpServletRequest.getHeader(PLATFORM);
-//        if (!StringUtils.hasText(platform)) {
-//            log.info("[doFilter] Platform 헤더 값이 없어요.");
-//            filterErrorResponse.setResponse(httpServletResponse, ErrorCode.MISSING_PLATFORM);
-//            return;
-//        }
+        String platform = httpServletRequest.getHeader(PLATFORM);
+        if (!StringUtils.hasText(platform)) {
+            log.info("[doFilter] Platform 헤더 값이 없어요.");
+            filterErrorResponse.setResponse(httpServletResponse, ErrorCode.MISSING_PLATFORM);
+            return;
+        }
 
         // Device-Id 뽑아내기.
-//        long deviceId = NumberUtils.toLong(httpServletRequest.getHeader(DEVICE_ID), 0L);
-//        if (!Pattern.matches("/api/v[0-9]/auth/login/uuid", httpServletRequest.getRequestURI())) { // uuidLogin api는 제외한다.
-//            if (deviceId <= 0L) {
-//                log.info("[doFilter] Device-Id 헤더 값이 없어요.");
-//                filterErrorResponse.setResponse(httpServletResponse, ErrorCode.MISSING_DEVICE_ID);
-//                return;
-//            }
-//        }
+        long deviceId = NumberUtils.toLong(httpServletRequest.getHeader(DEVICE_ID), 0L);
+        if (!Pattern.matches("/v[0-9]/auth/login/uuid", httpServletRequest.getRequestURI())) { // uuidLogin api는 제외한다.
+            if (deviceId <= 0L) {
+                log.info("[doFilter] Device-Id 헤더 값이 없어요.");
+                filterErrorResponse.setResponse(httpServletResponse, ErrorCode.MISSING_DEVICE_ID);
+                return;
+            }
+        }
 
         // 버전 체크하기.
 //        if (appVersionService.isUpdateMandatory(platform, appVersion)) {

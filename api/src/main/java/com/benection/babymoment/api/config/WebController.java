@@ -13,7 +13,7 @@ import java.util.Arrays;
  */
 @RestController
 @AllArgsConstructor
-public class WebRestController {
+public class WebController {
     private Environment env;
 
     @GetMapping("/spring-profile")

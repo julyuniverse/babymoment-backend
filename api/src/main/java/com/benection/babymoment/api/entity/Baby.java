@@ -1,9 +1,6 @@
 package com.benection.babymoment.api.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,8 +17,9 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@DynamicInsert // insert 시 null인 필드 제외
-@DynamicUpdate // update 시 null인 필드 제외
+@DynamicInsert
+@DynamicUpdate
+@Table(name = "babies")
 public class Baby extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,23 +28,21 @@ public class Baby extends BaseEntity {
     private LocalDateTime birthday;
     private String gender;
     private String bloodType;
-    private String imageFileName;
-    private Boolean isDeleted;
     private String utcOffset;
     private String tzId;
     private LocalDateTime deletedAt;
+    private Boolean isDeleted;
 
     @Builder
-    public Baby(String name, LocalDateTime birthday, String gender, String bloodType, String imageFileName, Boolean isDeleted, String utcOffset, String tzId, LocalDateTime deletedAt) {
+    public Baby(String name, LocalDateTime birthday, String gender, String bloodType, String utcOffset, String tzId, LocalDateTime deletedAt, Boolean isDeleted) {
         this.name = name;
         this.birthday = birthday;
         this.gender = gender;
         this.bloodType = bloodType;
-        this.imageFileName = imageFileName;
-        this.isDeleted = isDeleted;
         this.utcOffset = utcOffset;
         this.tzId = tzId;
         this.deletedAt = deletedAt;
+        this.isDeleted = isDeleted;
     }
 
     public void updateName(String name) {
@@ -71,9 +67,5 @@ public class Baby extends BaseEntity {
 
     public void updateDeletedAt(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
-    }
-
-    public void updateImageFileName(String imageFileName) {
-        this.imageFileName = imageFileName;
     }
 }

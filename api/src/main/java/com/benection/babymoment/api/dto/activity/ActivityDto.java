@@ -18,7 +18,7 @@ public class ActivityDto {
     private Integer activityId;
     private Integer babyId;
     private LocalDate localDate;
-    private String type;
+    private String type1;
     private String type2;
     private String memo;
     private LocalDateTime startTime;

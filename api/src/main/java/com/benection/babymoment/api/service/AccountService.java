@@ -6,8 +6,7 @@ import com.benection.babymoment.api.config.TokenProvider;
 import com.benection.babymoment.api.dto.ApiResponse;
 import com.benection.babymoment.api.dto.AccountRequest;
 import com.benection.babymoment.api.dto.AccountResponse;
-import com.benection.babymoment.api.dto.StringResponse;
-import com.benection.babymoment.api.dto.Status;
+import com.benection.babymoment.api.dto.StatusDto;
 import com.benection.babymoment.api.enums.*;
 import com.benection.babymoment.api.entity.*;
 import com.benection.babymoment.api.repository.*;
@@ -45,12 +44,6 @@ public class AccountService {
     private final AuthenticationLogService authenticationLogService;
     private final PasswordEncoder passwordEncoder;
 
-    public StringResponse string1() {
-        return StringResponse.builder()
-                .string("string1")
-                .build();
-    }
-
     /**
      * @return 계정
      * @author Lee Taesung
@@ -59,7 +52,7 @@ public class AccountService {
     public ApiResponse<AccountResponse> getAccount(int accountId) {
         Account account = accountRepository.findByAccountId(accountId);
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), new AccountResponse(convertAccountToAccountDto(account)));
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), new AccountResponse(convertAccountToAccountDto(account)));
     }
 
     /**
@@ -72,7 +65,7 @@ public class AccountService {
         Account account = accountRepository.findByAccountId(accountId);
         if (StringUtils.hasText(request.getEmail()) && !Objects.equals(request.getEmail(), account.getEmail())) { // 이메일 변경
             if (accountRepository.existsByEmail(request.getEmail())) {
-                return new ApiResponse<>(new Status(StatusCode.DUPLICATE_EMAIL), null);
+                return new ApiResponse<>(new StatusDto(StatusCode.DUPLICATE_EMAIL), null);
             } else {
                 account.updateEmail(request.getEmail());
             }
@@ -81,11 +74,11 @@ public class AccountService {
             if (passwordEncoder.matches(request.getPreviousPassword(), account.getPassword())) { // 이전 비밀번호가 같다면
                 account.updatePassword(passwordEncoder.encode(request.getNewPassword()));
             } else {
-                return new ApiResponse<>(new Status(StatusCode.INVALID_PASSWORD), null);
+                return new ApiResponse<>(new StatusDto(StatusCode.INVALID_PASSWORD), null);
             }
         }
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), new AccountResponse(convertAccountToAccountDto(account)));
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), new AccountResponse(convertAccountToAccountDto(account)));
     }
 
     /**
@@ -191,6 +184,6 @@ public class AccountService {
         // Create authentication log.
         authenticationLogService.createAuthenticationLog(AuthenticationLogType.DELETE, deviceId, accountId, babyId);
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), null);
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), null);
     }
 }

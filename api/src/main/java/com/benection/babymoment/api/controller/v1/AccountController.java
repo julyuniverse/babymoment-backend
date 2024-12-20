@@ -2,7 +2,6 @@ package com.benection.babymoment.api.controller.v1;
 
 import com.benection.babymoment.api.dto.AccountRequest;
 import com.benection.babymoment.api.dto.AccountResponse;
-import com.benection.babymoment.api.dto.StringResponse;
 import com.benection.babymoment.api.service.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -19,14 +18,9 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Account", description = "account 관련 api")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/accounts")
+@RequestMapping("/v1/accounts")
 public class AccountController {
     private final AccountService accountService;
-
-    @GetMapping("/string1")
-    public ResponseEntity<StringResponse> string1() {
-        return ResponseEntity.ok(accountService.string1());
-    }
 
     /**
      * @author Lee Taesung

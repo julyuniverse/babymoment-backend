@@ -16,10 +16,10 @@ import java.io.IOException;
  * @author Lee Taesung
  * @since 1.0
  */
-@Tag(name = "Baby", description = "baby 관련 api")
+@Tag(name = "Baby")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/babies")
+@RequestMapping("/v1/babies")
 public class BabyController {
     private final BabyService babyService;
 

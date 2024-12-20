@@ -1,6 +1,6 @@
 package com.benection.babymoment.api.dto.auth;
 
-import com.benection.babymoment.api.dto.AccountDTO;
+import com.benection.babymoment.api.dto.AccountDto;
 import com.benection.babymoment.api.dto.baby.BabyDto;
 import lombok.*;
 
@@ -15,6 +15,6 @@ import lombok.*;
 @Builder
 public class EmailLoginResponse {
     private TokenDto token;
-    private AccountDTO account;
+    private AccountDto account;
     private BabyDto baby;
 }

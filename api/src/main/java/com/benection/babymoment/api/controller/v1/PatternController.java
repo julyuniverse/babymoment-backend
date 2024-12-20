@@ -23,7 +23,7 @@ import java.time.LocalDate;
 @Tag(name = "Pattern", description = "pattern 관련 api")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/patterns")
+@RequestMapping("/v1/patterns")
 public class PatternController {
     private final PatternService patternService;
 

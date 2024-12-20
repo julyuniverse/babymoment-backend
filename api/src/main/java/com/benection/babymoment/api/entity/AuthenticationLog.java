@@ -1,15 +1,14 @@
 package com.benection.babymoment.api.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
+
+import java.time.LocalDateTime;
 
 /**
  * @author Lee Taesung
@@ -18,8 +17,9 @@ import org.hibernate.annotations.DynamicUpdate;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@DynamicInsert // insert 시 null인 필드 제외
-@DynamicUpdate // update 시 null인 필드 제외
+@DynamicInsert
+@DynamicUpdate
+@Table(name = "authentication_logs")
 public class AuthenticationLog extends BaseEntity2 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,20 +30,22 @@ public class AuthenticationLog extends BaseEntity2 {
     private Integer babyId;
     private String ip;
     private String userAgent;
-    private String appVersion;
+    private String version;
     private String utcOffset;
     private String tzId;
+    private LocalDateTime authenticatedAt;
 
     @Builder
-    public AuthenticationLog(String type, Integer deviceId, Integer accountId, Integer babyId, String ip, String userAgent, String appVersion, String utcOffset, String tzId) {
+    public AuthenticationLog(String type, Integer deviceId, Integer accountId, Integer babyId, String ip, String userAgent, String version, String utcOffset, String tzId, LocalDateTime authenticatedAt) {
         this.type = type;
         this.deviceId = deviceId;
         this.accountId = accountId;
         this.babyId = babyId;
         this.ip = ip;
         this.userAgent = userAgent;
-        this.appVersion = appVersion;
+        this.version = version;
         this.utcOffset = utcOffset;
         this.tzId = tzId;
+        this.authenticatedAt = authenticatedAt;
     }
 }

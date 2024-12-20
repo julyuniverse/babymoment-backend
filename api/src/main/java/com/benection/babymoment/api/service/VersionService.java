@@ -1,7 +1,7 @@
 package com.benection.babymoment.api.service;
 
-import com.benection.babymoment.api.entity.AppVersion;
-import com.benection.babymoment.api.repository.AppVersionRepository;
+import com.benection.babymoment.api.entity.Version;
+import com.benection.babymoment.api.repository.VersionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +15,8 @@ import static com.benection.babymoment.api.util.VersionUtils.toNumber;
  */
 @Service
 @RequiredArgsConstructor
-public class AppVersionService {
-    private final AppVersionRepository appVersionRepository;
+public class VersionService {
+    private final VersionRepository versionRepository;
 
     /**
      * 현재 버전이 업데이트가 필수인지 확인한다.
@@ -26,9 +26,9 @@ public class AppVersionService {
      */
     public boolean isUpdateMandatory(String platform, String currentVersion) {
         // 가장 최신 필수 업데이트 버전을 가져온다.
-        Optional<AppVersion> optionalLatestMandatoryVersion = appVersionRepository.findTopByPlatformAndIsMandatoryTrueAndIsActiveTrueOrderByReleaseDateDesc(platform);
+        Optional<Version> optionalLatestMandatoryVersion = versionRepository.findTopByPlatformAndIsMandatoryTrueAndIsActiveTrueOrderByReleaseDateDesc(platform);
 
         // 현재 버전이 최신 필수 업데이트 버전보다 낮은지 확인한다.
-        return optionalLatestMandatoryVersion.filter(appVersion -> toNumber(currentVersion) < toNumber(appVersion.getVersion())).isPresent();
+        return optionalLatestMandatoryVersion.filter(version -> toNumber(currentVersion) < toNumber(version.getVersion())).isPresent();
     }
 }

@@ -4,7 +4,7 @@ import com.benection.babymoment.api.dto.ApiResponse;
 import com.benection.babymoment.api.dto.inquiry.InquiryDto;
 import com.benection.babymoment.api.dto.inquiry.InquiryListResponse;
 import com.benection.babymoment.api.dto.inquiry.InquiryRequest;
-import com.benection.babymoment.api.dto.Status;
+import com.benection.babymoment.api.dto.StatusDto;
 import com.benection.babymoment.api.enums.StatusCode;
 import com.benection.babymoment.api.entity.Inquiry;
 import com.benection.babymoment.api.repository.InquiryRepository;
@@ -37,11 +37,11 @@ public class InquiryService {
                 .babyId(request.getBabyId())
                 .title(request.getTitle())
                 .content(request.getContent())
-                .inquiryDate(now)
+                .inquiredAt(now)
                 .build();
         inquiryRepository.save(inquiry);
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), null);
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), null);
     }
 
     /**
@@ -50,12 +50,12 @@ public class InquiryService {
      * @since 1.0
      */
     public ApiResponse<InquiryListResponse> getInquiries(int accountId) {
-        List<Inquiry> inquiries = inquiryRepository.findByAccountIdOrderByInquiryDateDesc(accountId);
+        List<Inquiry> inquiries = inquiryRepository.findByAccountIdOrderByInquiredAtDesc(accountId);
         List<InquiryDto> inquiryDtos = new ArrayList<>();
         for (Inquiry inquiry : inquiries) {
             inquiryDtos.add(convertInquiryToInquiryDto(inquiry));
         }
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), new InquiryListResponse(inquiryDtos));
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), new InquiryListResponse(inquiryDtos));
     }
 }

@@ -1,9 +1,6 @@
 package com.benection.babymoment.api.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
@@ -19,13 +16,14 @@ import java.time.LocalDateTime;
 @Entity
 @DynamicInsert
 @DynamicUpdate
+@Table(name = "activities")
 @EqualsAndHashCode(callSuper = true)
 public class Activity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer activityId;
     private Integer babyId;
-    private String type;
+    private String type1;
     private String type2;
     private String memo;
     private LocalDateTime startTime;
@@ -38,14 +36,15 @@ public class Activity extends BaseEntity {
     private Float amount;
     private String unit;
     private String unit2;
-    private Boolean isActive;
     private String utcOffset;
     private String tzId;
+    private LocalDateTime deletedAt;
+    private Boolean isDeleted;
 
     @Builder
-    public Activity(Integer babyId, String type, String type2, String memo, LocalDateTime startTime, LocalDateTime endTime, Float rightBreast, Float leftBreast, Float breast, Float rightAmount, Float leftAmount, Float amount, String unit, String unit2, Boolean isActive, String utcOffset, String tzId) {
+    public Activity(Integer babyId, String type1, String type2, String memo, LocalDateTime startTime, LocalDateTime endTime, Float rightBreast, Float leftBreast, Float breast, Float rightAmount, Float leftAmount, Float amount, String unit, String unit2, String utcOffset, String tzId, LocalDateTime deletedAt, Boolean isDeleted) {
         this.babyId = babyId;
-        this.type = type;
+        this.type1 = type1;
         this.type2 = type2;
         this.memo = memo;
         this.startTime = startTime;
@@ -58,13 +57,14 @@ public class Activity extends BaseEntity {
         this.amount = amount;
         this.unit = unit;
         this.unit2 = unit2;
-        this.isActive = isActive;
         this.utcOffset = utcOffset;
         this.tzId = tzId;
+        this.deletedAt = deletedAt;
+        this.isDeleted = isDeleted;
     }
 
-    public void updateType(String type) {
-        this.type = type;
+    public void updateType1(String type) {
+        this.type1 = type1;
     }
 
     public void updateType2(String type2) {
@@ -115,15 +115,19 @@ public class Activity extends BaseEntity {
         this.unit2 = unit2;
     }
 
-    public void updateIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
     public void updateUtcOffset(String utcOffset) {
         this.utcOffset = utcOffset;
     }
 
     public void updateTzId(String tzId) {
         this.tzId = tzId;
+    }
+
+    public void updateDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public void updateIsDeleted(Boolean isDeleted) {
+        this.isDeleted = isDeleted;
     }
 }

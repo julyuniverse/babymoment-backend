@@ -15,18 +15,18 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Builder
-public class Status {
+public class StatusDto {
     @Schema(description = "코드")
     private String code;
     @Schema(description = "메시지")
     private String message;
 
-    public Status(String code, String message) {
+    public StatusDto(String code, String message) {
         this.code = code;
         this.message = message;
     }
 
-    public Status(StatusCode statusCode) {
+    public StatusDto(StatusCode statusCode) {
         this.code = statusCode.getCode();
         this.message = statusCode.getMessage();
     }

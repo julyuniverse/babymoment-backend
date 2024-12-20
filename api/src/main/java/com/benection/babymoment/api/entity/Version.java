@@ -1,9 +1,6 @@
 package com.benection.babymoment.api.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,12 +16,13 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@DynamicInsert // insert 시 null인 필드 제외
-@DynamicUpdate // update 시 null인 필드 제외
-public class AppVersion {
+@DynamicInsert
+@DynamicUpdate
+@Table(name = "versions")
+public class Version {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer appVersionId;
+    private Integer versionId;
     private String version;
     private String platform;
     private LocalDate releaseDate;

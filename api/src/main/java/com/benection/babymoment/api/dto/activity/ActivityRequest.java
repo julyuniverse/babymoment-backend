@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ActivityRequest {
     private Integer babyId;
-    private String type;
+    private String type1;
     private String type2;
     private String memo;
     private LocalDateTime startTime;

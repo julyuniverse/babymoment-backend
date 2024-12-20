@@ -1,7 +1,7 @@
 package com.benection.babymoment.api.service;
 
 import com.benection.babymoment.api.dto.ApiResponse;
-import com.benection.babymoment.api.dto.Status;
+import com.benection.babymoment.api.dto.StatusDto;
 import com.benection.babymoment.api.dto.pattern.DailyPatternDto;
 import com.benection.babymoment.api.dto.pattern.DailyPatternListResponse;
 import com.benection.babymoment.api.dto.pattern.DailyPatternResponse;
@@ -48,7 +48,7 @@ public class PatternService {
         OffsetDateTime datetimeOffset = getDatetimeOffset(); // Get Datetime-Offset header value.
         LocalDateTime startTime = DateUtils.applyUtcOffsetToKoreanTime(datetimeOffset, LocalDateTime.of(date, LocalTime.of(0, 0, 0)));
         LocalDateTime endTime = DateUtils.applyUtcOffsetToKoreanTime(datetimeOffset, LocalDateTime.of(date, LocalTime.of(23, 59, 59)));
-        List<Activity> activities = activityRepository.listByBabyIdAndStartTimeBetweenOrEndTimeBetweenAndIsActiveOrderByStarTime(babyId, startTime, endTime, true);
+        List<Activity> activities = activityRepository.listByBabyIdAndStartTimeBetweenOrEndTimeBetweenAndIsActiveOrderByStarTime(babyId, startTime, endTime);
         List<PatternDto> patternDtos = new ArrayList<>();
         for (Activity activity : activities) {
             patternDtos.addAll(convertActivityToPatternDtoList(activity, startTime, endTime));
@@ -59,7 +59,7 @@ public class PatternService {
             dDay = dDay + 1;
         }
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), new DailyPatternResponse(new DailyPatternDto(date, dDay, patternDtos)));
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), new DailyPatternResponse(new DailyPatternDto(date, dDay, patternDtos)));
     }
 
     /**
@@ -74,7 +74,7 @@ public class PatternService {
         OffsetDateTime datetimeOffset = getDatetimeOffset(); // Get Datetime-Offset header value.
         LocalDateTime startTime = DateUtils.applyUtcOffsetToKoreanTime(datetimeOffset, LocalDateTime.of(startDate, LocalTime.of(0, 0, 0)));
         LocalDateTime endTime = DateUtils.applyUtcOffsetToKoreanTime(datetimeOffset, LocalDateTime.of(endDate, LocalTime.of(23, 59, 59)));
-        List<Activity> activities = activityRepository.listByBabyIdAndStartTimeBetweenOrEndTimeBetweenAndIsActiveOrderByStarTime(babyId, startTime, endTime, true);
+        List<Activity> activities = activityRepository.listByBabyIdAndStartTimeBetweenOrEndTimeBetweenAndIsActiveOrderByStarTime(babyId, startTime, endTime);
         List<PatternDto> patternDtos = new ArrayList<>();
         for (Activity activity : activities) {
             patternDtos.addAll(convertActivityToPatternDtoList(activity, startTime, endTime));
@@ -101,6 +101,6 @@ public class PatternService {
             }
         }
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), new DailyPatternListResponse(dailyPatternDtos));
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), new DailyPatternListResponse(dailyPatternDtos));
     }
 }

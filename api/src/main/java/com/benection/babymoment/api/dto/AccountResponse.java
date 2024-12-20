@@ -14,5 +14,5 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AccountResponse {
-    private AccountDTO account;
+    private AccountDto account;
 }

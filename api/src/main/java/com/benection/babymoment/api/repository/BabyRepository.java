@@ -17,7 +17,7 @@ public interface BabyRepository extends JpaRepository<Baby, Integer> {
      * @author Lee Taesung
      * @since 1.0
      */
-    Optional<Baby> findByBabyIdAndIsDeleted(long babyId, boolean isDeleted);
+    Optional<Baby> findByBabyIdAndIsDeletedFalse(long babyId);
 
     /**
      * @param babyId Baby->babyId

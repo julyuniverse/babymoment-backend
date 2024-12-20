@@ -17,7 +17,7 @@ public class InquiryDto {
     private Integer inquiryId;
     private String title;
     private String content;
-    private LocalDateTime inquiryDate;
+    private LocalDateTime inquiredAt;
     private String answer;
-    private LocalDateTime answerDate;
+    private LocalDateTime answeredAt;
 }

@@ -21,7 +21,7 @@ import java.time.LocalDate;
 @Tag(name = "Activity", description = "activity 관련 api")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/activities")
+@RequestMapping("/v1/activities")
 public class ActivityController {
     private final ActivityService activityService;
 

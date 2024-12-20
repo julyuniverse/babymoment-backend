@@ -14,7 +14,7 @@ import com.benection.babymoment.api.dto.LoginResponse;
 import com.benection.babymoment.api.dto.SocialLoginRequest;
 import com.benection.babymoment.api.dto.PasswordRecoveryRequest;
 import com.benection.babymoment.api.dto.auth.*;
-import com.benection.babymoment.api.dto.Status;
+import com.benection.babymoment.api.dto.StatusDto;
 import com.benection.babymoment.api.dto.auth.TokenReissueRequest;
 import com.benection.babymoment.api.dto.auth.TokenDto;
 import com.benection.babymoment.api.enums.AuthenticationLogType;
@@ -45,7 +45,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.interfaces.RSAPublicKey;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -54,6 +55,7 @@ import static com.benection.babymoment.api.util.ConvertUtils.convertAccountToAcc
 import static com.benection.babymoment.api.util.ConvertUtils.convertBabyToBabyDto;
 import static com.benection.babymoment.api.util.HttpHeaderUtils.*;
 import static com.benection.babymoment.api.util.RandomUtils.generateRandomString;
+import static com.benection.babymoment.api.util.RedisKeyUtils.generateRefreshTokenKey;
 
 /**
  * @author Lee Taesung
@@ -78,7 +80,6 @@ public class AuthService {
     @Value("${apple.bundle-id}")
     private String appleBundleId;
 
-
     /**
      * @return 요청 결괏값
      * @author Lee Taesung
@@ -90,12 +91,19 @@ public class AuthService {
 
         // Check if device exists by uuid and if not create it.
         Device device = deviceRepository.findByUuid(request.getDeviceUuid())
+                .map(v -> {
+                    v.updateModel(request.getDeviceModel());
+                    v.updateSystemName(request.getSystemName());
+                    v.updateSystemVersion(request.getSystemVersion());
+
+                    return v;
+                })
                 .orElseGet(() -> deviceRepository.save(Device.builder()
                         .uuid(request.getDeviceUuid())
+                        .model(request.getDeviceModel())
+                        .systemName(request.getSystemName())
+                        .systemVersion(request.getSystemVersion())
                         .build()));
-        device.updateModel(request.getDeviceModel());
-        device.updateSystemName(request.getSystemName());
-        device.updateSystemVersion(request.getSystemVersion());
 
         // Check device.
         if (device.getAccountId() != null) { // accountId가 등록되어 있다면
@@ -106,7 +114,7 @@ public class AuthService {
                 Relationship relationship = null;
                 Optional<Relationship> optionalRelationship = relationshipRepository.findTopByAccountIdOrderByCreatedAt(account.getAccountId());
                 if (optionalRelationship.isPresent()) {
-                    Optional<Baby> optionalBaby = babyRepository.findByBabyIdAndIsDeleted(optionalRelationship.get().getBabyId(), false);
+                    Optional<Baby> optionalBaby = babyRepository.findByBabyIdAndIsDeletedFalse(optionalRelationship.get().getBabyId());
                     if (optionalBaby.isPresent()) {
                         baby = optionalBaby.get();
                         relationship = optionalRelationship.get();
@@ -115,7 +123,7 @@ public class AuthService {
                 if (device.getBabyId() != null) {
                     Optional<Relationship> optionalRelationship2 = relationshipRepository.findByAccountIdAndBabyId(device.getAccountId(), device.getBabyId());
                     if (optionalRelationship2.isPresent()) {
-                        Optional<Baby> optionalBaby = babyRepository.findByBabyIdAndIsDeleted(device.getBabyId(), false);
+                        Optional<Baby> optionalBaby = babyRepository.findByBabyIdAndIsDeletedFalse(device.getBabyId());
                         if (optionalBaby.isPresent()) {
                             baby = optionalBaby.get();
                             relationship = optionalRelationship2.get();
@@ -138,13 +146,12 @@ public class AuthService {
         } else {
             device.updateBabyId(null);
         }
-        deviceRepository.save(device);
         uuidLoginResponse.setDeviceId(device.getDeviceId());
 
         // Create authentication log.
         authenticationLogService.createAuthenticationLog(AuthenticationLogType.UUID_LOGIN, device.getDeviceId(), device.getAccountId(), device.getBabyId());
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), uuidLoginResponse);
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), uuidLoginResponse);
     }
 
     /**
@@ -153,8 +160,6 @@ public class AuthService {
      */
     @Transactional
     public ApiResponse<Void> signupWithEmail(EmailSignupRequest emailSignupRequest) {
-        ApiResponse<Void> apiResponse = new ApiResponse<>();
-
         // Get Device-Id header value, Datetime-Offset header value, Timezone-Identifier header value.
         Integer deviceId = Integer.valueOf(getDeviceId());
         OffsetDateTime datetimeOffset = getDatetimeOffset();
@@ -162,25 +167,19 @@ public class AuthService {
 
         // id(email) 중복을 확인한다.
         if (accountRepository.existsByEmail(emailSignupRequest.getEmail())) {
-            apiResponse.setStatus(new Status(StatusCode.DUPLICATE_EMAIL));
-
-            return apiResponse;
+            return new ApiResponse<>(new StatusDto(StatusCode.DUPLICATE_EMAIL), null);
         }
-        Account account = Account.builder()
+        Account account = accountRepository.save(Account.builder()
                 .email(emailSignupRequest.getEmail())
                 .password(passwordEncoder.encode(emailSignupRequest.getPassword()))
                 .utcOffset(String.valueOf(datetimeOffset.getOffset()))
                 .tzId(timezoneIdentifier)
-                .build();
-        accountRepository.save(account);
+                .build());
 
         // Create authentication log.
         authenticationLogService.createAuthenticationLog(AuthenticationLogType.SIGNUP, deviceId, account.getAccountId(), null);
 
-        // Set return value.
-        apiResponse.setStatus(new Status(StatusCode.SUCCESS));
-
-        return apiResponse;
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), null);
     }
 
     /**
@@ -190,8 +189,6 @@ public class AuthService {
      */
     @Transactional
     public ApiResponse<EmailLoginResponse> loginWithEmail(EmailLoginRequest request) {
-        ApiResponse<EmailLoginResponse> apiResponse = new ApiResponse<>();
-
         // Get Device-Id header value.
         Integer deviceId = Integer.valueOf(getDeviceId());
 
@@ -200,19 +197,13 @@ public class AuthService {
         Optional<Account> optionalAccount = accountRepository.findByEmail(request.getEmail());
         if (optionalAccount.isPresent()) {
             if (optionalAccount.get().getIsDeleted()) { // 삭제된 상태라면
-                apiResponse.setStatus(new Status(StatusCode.NOT_FOUND_ACCOUNT));
-
-                return apiResponse;
+                return new ApiResponse<>(new StatusDto(StatusCode.NOT_FOUND_ACCOUNT), null);
             } else if (!passwordEncoder.matches(request.getPassword(), optionalAccount.get().getPassword())) { // 비밀번호가 틀리다면
-                apiResponse.setStatus(new Status(StatusCode.INVALID_PASSWORD));
-
-                return apiResponse;
+                return new ApiResponse<>(new StatusDto(StatusCode.INVALID_PASSWORD), null);
             }
             account = optionalAccount.get();
         } else {
-            apiResponse.setStatus(new Status(StatusCode.NOT_FOUND_ACCOUNT));
-
-            return apiResponse;
+            return new ApiResponse<>(new StatusDto(StatusCode.NOT_FOUND_ACCOUNT), null);
         }
 
         // Get baby.
@@ -221,7 +212,7 @@ public class AuthService {
         Relationship relationship = null;
         Optional<Relationship> relationshipOptional = relationshipRepository.findTopByAccountIdOrderByCreatedAt(account.getAccountId());
         if (relationshipOptional.isPresent()) {
-            Optional<Baby> babyOptional = babyRepository.findByBabyIdAndIsDeleted(relationshipOptional.get().getBabyId(), false);
+            Optional<Baby> babyOptional = babyRepository.findByBabyIdAndIsDeletedFalse(relationshipOptional.get().getBabyId());
             if (babyOptional.isPresent()) {
                 baby = babyOptional.get();
                 relationship = relationshipOptional.get();
@@ -248,8 +239,8 @@ public class AuthService {
                 .refreshToken(tokenProvider.createRefreshToken(authentication, String.valueOf(deviceId)))
                 .build();
 
-        // 4. Insert refresh token into redis. (삽입 시 키 이름은 accountId:deviceId로 설정한다.)
-        redisService.setData(account.getAccountId() + ":" + device.getDeviceId(), tokenDto.getRefreshToken(), refreshTokenTtl);
+        // 4. Insert refresh token into redis. (삽입 시 키 이름은 refresh_token:accountId_deviceId로 설정한다.)
+        redisService.setData("refresh_token:" + account.getAccountId() + "_" + device.getDeviceId(), tokenDto.getRefreshToken(), refreshTokenTtl);
 
         // Set return value.
         EmailLoginResponse emailLoginResponse = EmailLoginResponse.builder()
@@ -264,11 +255,7 @@ public class AuthService {
         // Create authentication log.
         authenticationLogService.createAuthenticationLog(AuthenticationLogType.EMAIL_LOGIN, device.getDeviceId(), account.getAccountId(), babyId);
 
-        // Set return value.
-        apiResponse.setStatus(new Status(StatusCode.SUCCESS));
-        apiResponse.setData(emailLoginResponse);
-
-        return apiResponse;
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), emailLoginResponse);
     }
 
     /**
@@ -340,9 +327,9 @@ public class AuthService {
                 .build();
 
         // 8. Update refresh token in redis.
-        redisService.setData(authentication.getName() + ":" + deviceId, tokenDto.getRefreshToken(), refreshTokenTtl);
+        redisService.setData("refresh_token:" + authentication.getName() + "_" + deviceId, tokenDto.getRefreshToken(), refreshTokenTtl);
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), new TokenReissueResponse(tokenDto));
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), new TokenReissueResponse(tokenDto));
     }
 
     /**
@@ -351,8 +338,6 @@ public class AuthService {
      */
     @Transactional(noRollbackFor = {CustomException.class})
     public ApiResponse<Void> logout() {
-        ApiResponse<Void> apiResponse = new ApiResponse<>();
-
         // Get Device-Id header value.
         Integer deviceId = Integer.valueOf(getDeviceId());
         Integer accountId = null;
@@ -392,19 +377,13 @@ public class AuthService {
             // 6. Create authentication log.
             authenticationLogService.createAuthenticationLog(AuthenticationLogType.LOGOUT, deviceId, accountId, babyId);
 
-            // 7. Set return value.
-            apiResponse.setStatus(new Status(StatusCode.SUCCESS));
-
-            return apiResponse;
+            return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), null);
         } catch (CustomException e) {
             authenticationLogService.createAuthenticationLog(AuthenticationLogType.LOGOUT, deviceId, accountId, babyId);
             setNullToDevice(deviceId);
             log.info("[logout] ErrorCode: " + e.getErrorCode().name());
 
-            // Set return value.
-            apiResponse.setStatus(new Status(StatusCode.SUCCESS));
-
-            return apiResponse;
+            return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), null);
         }
     }
 
@@ -415,7 +394,6 @@ public class AuthService {
      */
     @Transactional
     public ApiResponse<Void> processPasswordRecovery(PasswordRecoveryRequest request) {
-        ApiResponse<Void> apiResponse = new ApiResponse<>();
         Optional<Account> optionalAccount = accountRepository.findByEmail(request.getEmail());
         if (optionalAccount.isPresent()) {
             Account account = optionalAccount.get();
@@ -423,15 +401,9 @@ public class AuthService {
             account.updatePassword(passwordEncoder.encode(randomString));
             emailService.sendEmail(account.getEmail(), "임시 비밀번호", "임시 비밀번호: " + randomString);
 
-            // Set return value.
-            apiResponse.setStatus(new Status(StatusCode.SUCCESS));
-
-            return apiResponse;
+            return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), null);
         } else {
-            // Set return value.
-            apiResponse.setStatus(new Status(StatusCode.NOT_FOUND_ACCOUNT));
-
-            return apiResponse;
+            return new ApiResponse<>(new StatusDto(StatusCode.NOT_FOUND_ACCOUNT), null);
         }
     }
 
@@ -442,71 +414,64 @@ public class AuthService {
      * @since 1.0
      */
     @Transactional
-    public ApiResponse<LoginResponse> loginWithSocialProvider(SocialLoginRequest request) throws JwkException, MalformedURLException {
+    public ApiResponse<LoginResponse> loginWithSocialProvider(SocialLoginRequest request) throws JwkException, MalformedURLException, URISyntaxException {
         // Get Device-Id header value, Datetime-Offset header value, Timezone-Identifier header value.
-        Integer deviceId = Integer.valueOf(getDeviceId());
+        String deviceId = getDeviceId();
         OffsetDateTime datetimeOffset = getDatetimeOffset();
         String timezoneIdentifier = getTimezoneIdentifier();
-        Account account = null;
-        if (Objects.equals(request.getProvider(), "apple")) { // apple
-            // idToken 검증 5가지
-            // apple 개발자 문서: https://developer.apple.com/documentation/sign_in_with_apple/sign_in_with_apple_rest_api/verifying_a_user#3383769
-            // Verify the identity token ↓
-            // 1. Verify the JWS E256 signature using the server’s public key
-            // 2. Verify the nonce for the authentication ↓
-            // nonce는 클라이언트에서 생성한 값으로, 보안 상의 이유로 재전송 공격을 방지한다.
-            // 클라이언트에서 생성한 nonce를 identityToken을 검증할 때 포함시켜야 하지만, 클라이언트에서 identityToken을 얻기 때문에 서버에서는 이 값을 검증할 수 없다.
-            // 보통 이 검증은 클라이언트에서 이루어진다.
-            // 3. Verify that the iss field contains https://appleid.apple.com
-            // 4. Verify that the aud field is the developer’s client_id
-            // 5. Verify that the time is earlier than the exp value of the token
 
-            // 1. server’s public key를 사용한 검증(1번 검증)
-            // apple 서버로부터 공개키 3개 가져오기.
-            JwkProvider provider = new UrlJwkProvider(new URL("https://appleid.apple.com/auth/keys"));
-            DecodedJWT jwt = JWT.decode(request.getIdToken());
-            Jwk jwk = provider.get(jwt.getKeyId());
+        // idToken 검증 5가지
+        // apple 개발자 문서: https://developer.apple.com/documentation/sign_in_with_apple/sign_in_with_apple_rest_api/verifying_a_user#3383769
+        // Verify the identity token ↓
+        // 1. Verify the JWS E256 signature using the server’s public key
+        // 2. Verify the nonce for the authentication ↓
+        // nonce는 클라이언트에서 생성한 값으로, 보안 상의 이유로 재전송 공격을 방지한다.
+        // 클라이언트에서 생성한 nonce를 identityToken을 검증할 때 포함시켜야 하지만, 클라이언트에서 identityToken을 얻기 때문에 서버에서는 이 값을 검증할 수 없다.
+        // 보통 이 검증은 클라이언트에서 이루어진다.
+        // 3. Verify that the iss field contains https://appleid.apple.com
+        // 4. Verify that the aud field is the developer’s client_id
+        // 5. Verify that the time is earlier than the exp value of the token
 
-            // 2. Validate token.
-            Algorithm algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey(), null);
-            JWTVerifier verifier = JWT.require(algorithm)
-                    .withIssuer("https://appleid.apple.com")
-                    .build();
-            DecodedJWT decodedJWT = verifier.verify(request.getIdToken());
+        // 1. server’s public key를 사용한 검증(1번 검증)
+        // apple 서버로부터 공개키 3개 가져오기.
 
-            // 3. Validate audience.
-            if (!decodedJWT.getAudience().contains(appleBundleId)) {
-                throw new RuntimeException("Invalid audience.");
-            }
+        JwkProvider provider = new UrlJwkProvider(new URI("https://appleid.apple.com/auth/keys").toURL());
+        DecodedJWT jwt = JWT.decode(request.getIdToken());
+        Jwk jwk = provider.get(jwt.getKeyId());
 
-            // 4. Validate expiration.
-            if (decodedJWT.getExpiresAt().before(new Date())) {
-                throw new RuntimeException("Token has expired.");
-            }
+        // 2. Validate token.
+        Algorithm algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey(), null);
+        JWTVerifier verifier = JWT.require(algorithm)
+                .withIssuer("https://appleid.apple.com")
+                .build();
+        DecodedJWT decodedJWT = verifier.verify(request.getIdToken());
 
-            // Extract user info.
-            String userIdentifier = decodedJWT.getSubject();
-            log.info("userIdentifier: {}", userIdentifier);
-            String email = decodedJWT.getClaim("email").asString();
-            log.info("email: {}", decodedJWT.getClaim("email").asString());
-            String firstName = request.getFirstName();
-            log.info("firstName: {}", firstName);
-            String lastName = request.getLastName();
-            log.info("lastName: {}", lastName);
+        // 3. Validate audience.
+        if (!decodedJWT.getAudience().contains(appleBundleId)) {
+            throw new RuntimeException("Invalid audience.");
+        }
 
-            // Insert db data.
-            Optional<Account> optionalAccount = accountRepository.findByUserIdentifier(userIdentifier);
-            if (optionalAccount.isPresent()) {
-                account = optionalAccount.get();
-                account.updateEmail(email);
-                if (StringUtils.hasText(firstName)) {
-                    account.updateFirstName(firstName);
-                }
-                if (StringUtils.hasText(lastName)) {
-                    account.updateLastName(lastName);
-                }
-            } else {
-                account = accountRepository.save(Account.builder()
+        // 4. Validate expiration.
+        if (decodedJWT.getExpiresAt().before(new Date())) {
+            throw new RuntimeException("Token has expired.");
+        }
+
+        // Extract user info.
+        String userIdentifier = decodedJWT.getSubject();
+        String email = decodedJWT.getClaim("email").asString();
+        String firstName = request.getFirstName();
+        String lastName = request.getLastName();
+
+        // Insert db data or update.
+        Account account = accountRepository.findByUserIdentifier(userIdentifier)
+                .map(v -> {
+                    v.updateEmail(email);
+                    if (StringUtils.hasText(firstName)) v.updateFirstName(firstName);
+                    if (StringUtils.hasText(lastName)) v.updateLastName(lastName);
+
+                    return v;
+                })
+                .orElseGet(() -> accountRepository.save(Account.builder()
                         .userIdentifier(userIdentifier)
                         .email(email)
                         .firstName(firstName)
@@ -514,35 +479,33 @@ public class AuthService {
                         .authority(Authority.ROLE_USER.name())
                         .utcOffset(String.valueOf(datetimeOffset.getOffset()))
                         .tzId(timezoneIdentifier)
-                        .build());
-            }
-        }
+                        .build()));
 
         // Update device.
-        Device device = deviceRepository.findByDeviceId(deviceId);
+        Device device = deviceRepository.findByDeviceId(Integer.parseInt(deviceId));
         device.updateAccountId(account.getAccountId());
 
         // Issue tokens.
         // Create access token, refresh token.
-        // 1. 소셜 인증 토큰 생성
+        // 1. 소셜 인증 토큰 생성한다.
         List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(account.getAuthority()));
         SocialAuthenticationToken authenticationToken = new SocialAuthenticationToken(account.getAccountId(), authorities);
 
-        // 2. SecurityContext에 인증 정보 설정
+        // 2. SecurityContext에 인증 정보 설정한다.
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
-        // 3. JWT 토큰 발급
-        TokenDto tokenDto = new TokenDto(tokenProvider.createAccessToken(authenticationToken, String.valueOf(deviceId)), tokenProvider.createRefreshToken(authenticationToken, String.valueOf(deviceId)));
+        // 3. 토큰을 발급한다.
+        TokenDto tokenDto = new TokenDto(tokenProvider.createAccessToken(authenticationToken, deviceId), tokenProvider.createRefreshToken(authenticationToken, deviceId));
 
-        // 4. redis에 refresh token 생성한다. (생성 시 키 이름은 accountId:deviceId로 설정한다.)
-        redisService.setData(account.getAccountId() + ":" + device.getDeviceId(), tokenDto.getRefreshToken(), refreshTokenTtl);
+        // 4. redis에 refresh token 생성한다. (생성 시 키 이름은 refresh_token:accountId_deviceId로 설정한다.)
+        redisService.setData(generateRefreshTokenKey(account.getAccountId() + "_" + device.getDeviceId()), tokenDto.getRefreshToken(), refreshTokenTtl);
 
         // 5. Set return value.
         LoginResponse loginResponse = new LoginResponse(convertAccountToAccountDto(account), tokenDto);
 
         // 6. Create authentication log.
-        authenticationLogService.createAuthenticationLog(AuthenticationLogType.SOCIAL_LOGIN, deviceId, account.getAccountId(), null);
+        authenticationLogService.createAuthenticationLog(AuthenticationLogType.SOCIAL_LOGIN, Integer.parseInt(deviceId), account.getAccountId(), null);
 
-        return new ApiResponse<>(new Status(StatusCode.SUCCESS), loginResponse);
+        return new ApiResponse<>(new StatusDto(StatusCode.SUCCESS), loginResponse);
     }
 }

@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AccountDTO {
+public class AccountDto {
     private Integer accountId;
     private String email;
     private String firstName;

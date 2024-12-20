@@ -15,6 +15,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoginResponse {
-    private AccountDTO account;
+    private AccountDto account;
     private TokenDto token;
 }

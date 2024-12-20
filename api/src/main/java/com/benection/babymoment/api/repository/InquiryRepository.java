@@ -15,5 +15,5 @@ public interface InquiryRepository extends JpaRepository<Inquiry, Integer> {
      * @author Lee Taesung
      * @since 1.0
      */
-    List<Inquiry> findByAccountIdOrderByInquiryDateDesc(int accountId);
+    List<Inquiry> findByAccountIdOrderByInquiredAtDesc(int accountId);
 }

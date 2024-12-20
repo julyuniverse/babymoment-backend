@@ -1,6 +1,6 @@
 package com.benection.babymoment.api.util;
 
-import com.benection.babymoment.api.dto.AccountDTO;
+import com.benection.babymoment.api.dto.AccountDto;
 import com.benection.babymoment.api.dto.activity.ActivityDto;
 import com.benection.babymoment.api.dto.baby.BabyDto;
 import com.benection.babymoment.api.dto.inquiry.InquiryDto;
@@ -26,8 +26,8 @@ public class ConvertUtils {
      * @author Lee Taesung
      * @since 1.0
      */
-    public static AccountDTO convertAccountToAccountDto(Account account) {
-        return AccountDTO.builder()
+    public static AccountDto convertAccountToAccountDto(Account account) {
+        return AccountDto.builder()
                 .accountId(account.getAccountId())
                 .email(account.getEmail())
                 .firstName(account.getFirstName())
@@ -48,7 +48,6 @@ public class ConvertUtils {
                 .gender(baby.getGender())
                 .bloodType(baby.getBloodType())
                 .relationshipType(relationship.getType())
-                .imageFileName(baby.getImageFileName())
                 .authority(relationship.getAuthority())
                 .build();
     }
@@ -66,7 +65,7 @@ public class ConvertUtils {
                 .activityId(activity.getActivityId())
                 .babyId(activity.getBabyId())
                 .localDate(startTime.toLocalDate())
-                .type(activity.getType())
+                .type1(activity.getType1())
                 .type2(activity.getType2())
                 .memo(activity.getMemo())
                 .startTime(startTime)
@@ -136,7 +135,7 @@ public class ConvertUtils {
                     .date(isDateBefore ? applyUtcOffsetToLocalTime(datetimeOffset, activity.getStartTime()).toLocalDate().plusDays(1) : applyUtcOffsetToLocalTime(datetimeOffset, activity.getStartTime()).toLocalDate())
                     .startTime(startTime)
                     .endTime(endTime)
-                    .type(activity.getType())
+                    .type(activity.getType1())
                     .build());
 
             return patternDtos;
@@ -171,13 +170,13 @@ public class ConvertUtils {
                         .date(localStartDatetime1.toLocalDate())
                         .startTime(localStartDatetime1.toLocalTime())
                         .endTime(localEndDatetime1.toLocalTime())
-                        .type(activity.getType())
+                        .type(activity.getType1())
                         .build());
                 patternDtos.add(PatternDto.builder()
                         .date(localStartDatetime2.toLocalDate())
                         .startTime(localStartDatetime2.toLocalTime())
                         .endTime(localEndDatetime2.toLocalTime())
-                        .type(activity.getType())
+                        .type(activity.getType1())
                         .build());
 
                 return patternDtos;
@@ -188,7 +187,7 @@ public class ConvertUtils {
                         .date(applyUtcOffsetToLocalTime(datetimeOffset, activity.getStartTime()).toLocalDate())
                         .startTime(startTime)
                         .endTime(endTime)
-                        .type(activity.getType())
+                        .type(activity.getType1())
                         .build());
 
                 return patternDtos;
@@ -246,9 +245,9 @@ public class ConvertUtils {
                 .inquiryId(inquiry.getInquiryId())
                 .title(inquiry.getTitle())
                 .content(inquiry.getContent())
-                .inquiryDate(inquiry.getInquiryDate())
+                .inquiredAt(inquiry.getInquiredAt())
                 .answer(inquiry.getAnswer())
-                .answerDate(inquiry.getAnswerDate())
+                .answeredAt(inquiry.getAnsweredAt())
                 .build();
     }
 }
